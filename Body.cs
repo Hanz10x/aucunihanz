@@ -7,12 +7,11 @@ public class Body : MonoBehaviour
 	//変数の宣言と初期化
 	public bool MoveOK = false; //true=前進+キー入力受付での旋回をしても良い
 	public bool xOK = false; //true=縦方向に旋回可能
+	public float GoSpeed = 0f; //速度
 	public float SpeedUpperLimit = 0f; //速度上限
 	public float SpeedLowerLimit = 0f; //速度下限
-	public float GoSpeed = 0f; //速度
 	public float SpeedPlus = 0f; //加速
 	public float SpeedMinus = 0f; //減速
-	public float LRlimit = 0f; //上下角度上限(180を超える=上限なし) 80以上にすると挙動がおかしくなる
 	public float UDlimit = 0f; //上下角度上限(180を超える=上限なし) 80以上にすると挙動がおかしくなる
 	public float Startx = 0f;
 	public float Starty = 0f; 
@@ -71,11 +70,11 @@ public class Body : MonoBehaviour
 		float Turnz = transform.rotation.eulerAngles.z;
 		//実際の角度が負の値であれば変数値もそうなるように調整
 		if (Turnx > 180)
-			Turnx -= 360;
+			{Turnx -= 360;}
 		if (Turny > 180)
-			Turny -= 360;
+			{Turny -= 360;}
 		if (Turnz > 180)
-			Turnz -= 360;
+			{Turnz -= 360;}
 		//Debug.Log("現在角度:"+Turnx+","+Turny+","+Turnz);
 
 		//上下旋回+左右旋回
@@ -105,10 +104,11 @@ public class Body : MonoBehaviour
 		}
 		if (xOK)
 		{
+			//角度の変更
 			Turn.eulerAngles = new Vector3(-ChTurnx, ChTurny, 0);
 			this.transform.rotation *= Turn;
 		}
-			//常時z軸角度だけは元に戻ろうとする
+		//常時z軸角度だけは元に戻ろうとする
 		if (Turnz != 0.0f)
 		{
 			Turnx = transform.eulerAngles.x;
@@ -120,24 +120,36 @@ public class Body : MonoBehaviour
 		//加速
 		if (Input.GetKey(KeyCode.W))
 		{
-			SpeedPlus += SChange;
 			SpeedMinus = 0;
-			GoSpeed += SpeedPlus;
+			//速度が上限未満なら加速を許可
+			if (GoSpeed < SpeedUpperLimit)
+			{
+				SpeedPlus += SChange;
+				GoSpeed += SpeedPlus;
+			}
+			//速度が上限超過していたら直す
 			if (GoSpeed > SpeedUpperLimit)
 			{
 				GoSpeed = SpeedUpperLimit;
+				SpeedPlus = 0;
 			}
 		}
 
 		//減速
 		if (Input.GetKey(KeyCode.S))
 		{
-			SpeedMinus += SChange;
 			SpeedPlus = 0;
-			GoSpeed -= SpeedMinus;
+			//速度が下限を超えていたら減速を許可
+			if (GoSpeed > SpeedLowerLimit)
+			{
+				SpeedMinus += SChange;
+				GoSpeed -= SpeedMinus;
+			}
+			//速度が下限を下回っていたら直す
 			if (GoSpeed < SpeedLowerLimit)
 			{
 				GoSpeed = SpeedLowerLimit;
+				SpeedMinus = 0;
 			}
 		}		
 	}

@@ -7,26 +7,24 @@ public class MainCamera : MonoBehaviour
 	//カメラのモードを決める為のスイッチ変数を宣言する
 	public int CameraMode = 0; //0=俯瞰,1=主観
 	//読み込んだデータを格納計算するための変数を宣言する
-	public Vector3 RotationA = Vector3.zero; //機体の前回の角度を格納する変数
-	public Vector3 RotationB = Vector3.zero; //機体の現在の角度を格納する変数
-	public Vector3 RotationC = Vector3.zero; //機体の角度の変化量を格納する変数
-	public Vector3 RotationD = Vector3.zero; //何らかの角度を格納しておく一時的な変数
-	public Vector3 CameraPosition = Vector3.zero; //カメラの移動後の座標を格納する変数
-	public Vector3 CameraRotation = Vector3.zero; //カメラの角度を格納する変数
-	public Vector3 BodyPosition = Vector3.zero; //機体の現在の位置を格納する変数
-    public Vector3 DistanceToBody = Vector3.zero; //機体との相対座標を格納する変数
-	public float CameraPx = 0; //カメラ初期位置x
-	public float CameraPy = 0; //カメラ初期位置y
-	public float CameraPz = 0; //カメラ初期位置z
-	public float CameraRx = 0; //カメラ初期角度x
-	public float CameraRy = 0; //カメラ初期角度y
-	public float BodyGoSpeed = 0.0f; //機体の速度データを読み込む変数
-	public float xAdjust = 0.0f; //機体のx角を調整して格納する変数
-	public float xTheta = 0.0f; //機体のx角を三角関数的に保存するための変数
+	private Vector3 CameraPosition = Vector3.zero; //カメラの移動後の座標を格納する変数
+	private Vector3 CameraRotation = Vector3.zero; //カメラの角度を格納する変数
+	private Vector3 BodyPosition = Vector3.zero; //機体の現在の位置を格納する変数
+    private Vector3 DistanceToBody = Vector3.zero; //機体との相対座標を格納する変数
+	private Vector3 RotationA = Vector3.zero; //機体の前回の角度を格納する変数
+	private Vector3 RotationB = Vector3.zero; //機体の現在の角度を格納する変数
+	private Vector3 RotationC = Vector3.zero; //機体の角度の変化量を格納する変数
+	private Vector3 RotationD = Vector3.zero; //何らかの角度を格納しておく一時的な変数
+	private float CameraPx = 0; //カメラ初期位置x
+	private float CameraPy = 0; //カメラ初期位置y
+	private float CameraPz = 0; //カメラ初期位置z
+	private float CameraRx = 0; //カメラ初期角度x
+	private float CameraRy = 0; //カメラ初期角度y
+	private float xAdjust = 0.0f; //機体のx角を調整して格納する変数
+	private float xTheta = 0.0f; //機体のx角を三角関数的に保存するための変数
 
 	//Bodyに該当するオブジェクトとその特定コンポーネントへ関連付ける為の枠を作る。実際にはどちらも同じオブジェクトが入る
-	public Transform BodyObjectTransform; //Transformは座標などを司るデフォルトのコンポーネント名。変更不可
-	public Body BodyObjectMove; //Bodyは移動入力などを司るスクリプトのコンポーネント名(「Body.cs」の名前部分)。変更可
+	public Transform BodyObject; //Transformは座標などを司るデフォルトのコンポーネント名。変更不可
 
 	// Use this for initialization
 	void Start () 
@@ -39,7 +37,7 @@ public class MainCamera : MonoBehaviour
 		CameraRx = 20f;
 		CameraRy = 0f;
 		//起動時に機体の角度を取得しておく
-		RotationA = BodyObjectTransform.rotation.eulerAngles;
+		RotationA = BodyObject.rotation.eulerAngles;
 		if (RotationA.x > 180)
 			RotationA.x -= 360;
 		if (RotationA.y > 180)
@@ -47,7 +45,7 @@ public class MainCamera : MonoBehaviour
 		if (RotationA.z > 180)
 			RotationA.z -= 360;
 		//起動時に機体の座標を取得しておく
-		BodyPosition = BodyObjectTransform.position;
+		BodyPosition = BodyObject.position;
 		//カメラの位置を機体と同一にする
 		GetComponent<Transform>().position = BodyPosition;
 
@@ -64,7 +62,7 @@ public class MainCamera : MonoBehaviour
 		//俯瞰時のカメラの角度を決定する
 		CameraRotation = new Vector3(CameraRx, CameraRy, 0f); //絶対的な角度設定を取得
 		CameraRotation.y += RotationD.y;
-		Debug.Log("機体角度;"+RotationD+", カメラ角度;"+CameraRotation);
+		//Debug.Log("機体角度;"+RotationD+", カメラ角度;"+CameraRotation);
 
 		//俯瞰時のカメラの位置を決定する
 		/* カメラ位置に関するメモ
@@ -113,8 +111,10 @@ public class MainCamera : MonoBehaviour
 	// Update is called once per frame
 	void Update () 
 	{
+		//カメラをBodyの子オブジェクトにする
+		this.transform.parent = BodyObject;
 		//Bodyの現在の角度を取得する
-		RotationB = BodyObjectTransform.rotation.eulerAngles;
+		RotationB = BodyObject.rotation.eulerAngles;
 		if (RotationB.x > 180)
 			{RotationB.x -= 360;}
 		if (RotationB.y > 180)
@@ -124,7 +124,7 @@ public class MainCamera : MonoBehaviour
 		//Debug.Log("現在機体角度;"+RotationB);
 
 		//Bodyの現在の座標を取得する
-		BodyPosition = BodyObjectTransform.position;
+		BodyPosition = BodyObject.position;
 		//Debug.Log("カメラ現在位置"+GetComponent<Transform>().position);
 
 		//カメラの角度と座標を決める
