@@ -23,7 +23,7 @@ public class MainCamera : MonoBehaviour
 	private float xAdjust = 0.0f; //機体のx角を調整して格納する変数
 	private float xTheta = 0.0f; //機体のx角を三角関数的に保存するための変数
 
-	//Bodyに該当するオブジェクトとその特定コンポーネントへ関連付ける為の枠を作る。実際にはどちらも同じオブジェクトが入る
+	//Bodyに該当するオブジェクトとその特定コンポーネントへ関連付ける為の枠を作る。
 	public Transform BodyObject; //Transformは座標などを司るデフォルトのコンポーネント名。変更不可
 
 	// Use this for initialization
