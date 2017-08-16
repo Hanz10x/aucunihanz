@@ -4,40 +4,71 @@ using UnityEngine;
 
 public class Body : MonoBehaviour 
 {
-	//変数の宣言
-	public float GoSpeed = 1.0f; //現在速度
-	public float LRlimit = 180.0f; //左右角度上限
-	public float UDlimit = 90.0f; //上下角度上限
-	public float SpeedPlus = 0.0f; //加速
-	public float SpeedMinus = 0.0f; //減速
-	public float SpeedLimit = 50.0f; //速度上限
-	//public	float UseTime = 0.0f; //処理時間
-
+	//変数の宣言と初期化
+	public bool MoveOK = false; //true=前進+キー入力受付での旋回をしても良い
+	public bool xOK = false; //true=縦方向に旋回可能
+	public float SpeedUpperLimit = 0f; //速度上限
+	public float SpeedLowerLimit = 0f; //速度下限
+	public float GoSpeed = 0f; //速度
+	public float SpeedPlus = 0f; //加速
+	public float SpeedMinus = 0f; //減速
+	public float LRlimit = 0f; //上下角度上限(180を超える=上限なし) 80以上にすると挙動がおかしくなる
+	public float UDlimit = 0f; //上下角度上限(180を超える=上限なし) 80以上にすると挙動がおかしくなる
+	public float Startx = 0f;
+	public float Starty = 0f; 
+	public float Startz = 0f; //初期位置
+	public float ChTurnx = 0f;
+	public float ChTurny = 0f; //軸ごとの旋回量変動変数を初期化
+	public float PoTurnx = 0f;
+	public float PoTurny = 0f; //軸ごとの旋回量変化後の予測を格納する変数を初期化
+	public float RChange = 0f; //方向キーが押された時の角度の変化倍率
+	public float SChange = 0f; //速度変化量
+	public Vector3 BodyPlace = Vector3.zero; //現在の機体の座標を格納する変数BodyPlaceを初期化
+	public Quaternion Turn = Quaternion.identity; //旋回倍率を格納する変数Turnを初期化
+	
 	// Use this for initialization
 	void Start ()
 	{
-		
+		//変数の値を設定
+		MoveOK = true; //最初のみ駆動を許可　今後は他のスクリプトでこれを制御
+		SpeedUpperLimit = 55.0f;
+		SpeedLowerLimit = 0.0f;
+		GoSpeed = 0.0f;
+		UDlimit = 30f;
+		Startx = 0f;
+		Starty = 0f; 
+		Startz = 0f;
+		RChange = 50f;
+		SChange = 0.01f;
+		//初期位置を設定
+		BodyPlace = new Vector3(Startx, Starty, Startz);
+		this.transform.position = BodyPlace;
+		//初期角度を設定
+		Turn = Quaternion.Euler(0f, 0f, 0f);
+		this.transform.rotation = Turn; 
+		//速度が範囲外だったら下限値に直す
+		if(GoSpeed > SpeedUpperLimit || SpeedLowerLimit > GoSpeed)
+		{
+			GoSpeed = SpeedLowerLimit; 
+		}
 	}
 	
 	// Update is called once per frame
 	void Update()
 	{
-		//キー入力判定の初期化
-		public bool NoKey = true;
-
+	if(MoveOK)
+	{
 		//基本的な動き
 		//落下
 		//直進
-		this.transform.Translate(Vector3.forward * GoSpeed * 1 * Time.deltaTime);
+		this.transform.position += transform.forward * Time.deltaTime * GoSpeed;
+		//現在地点を取得
+		Vector3 BodyPlace = this.transform.position;
 
-		//旋回量変動値を初期化
-		public float ChTurnx = 0.0f;
-		public float ChTurny = 0.0f;
-		public float ChTurnz = 0.0f;
-		//現在の旋回量(本体のオイラー角度)を取得 +角度は0～180,-角度は180～360であらわされる
-		public float Turnx = transform.eulerAngles.x;
-		public float Turny = transform.eulerAngles.y;
-		public float Turnz = transform.eulerAngles.z;
+		//現在の旋回量(本体角度のオイラー角度表記でのデータ)を取得 +角度は0～180,-角度は180～360であらわされる
+		float Turnx = transform.rotation.eulerAngles.x;
+		float Turny = transform.rotation.eulerAngles.y;
+		float Turnz = transform.rotation.eulerAngles.z;
 		//実際の角度が負の値であれば変数値もそうなるように調整
 		if (Turnx > 180)
 			Turnx -= 360;
@@ -45,112 +76,70 @@ public class Body : MonoBehaviour
 			Turny -= 360;
 		if (Turnz > 180)
 			Turnz -= 360;
-		//Debug.Log("角度:"+Turnx+","+Turny+","+Turnz);
-		//現在地点を取得
-		Vector3 bodyplace = this.transform.position;		
-		//右旋回
-		if (Input.GetKey(KeyCode.RightArrow))
+		//Debug.Log("現在角度:"+Turnx+","+Turny+","+Turnz);
+
+		//上下旋回+左右旋回
+		//Quaternion Turn = Quaternion.identity; //旋回倍率を格納する変数Turnを初期化
+		//旋回した後の結果を予測
+		ChTurnx = Input.GetAxis("Vertical") * Time.fixedDeltaTime * RChange;
+		ChTurny = Input.GetAxis("Horizontal") * Time.fixedDeltaTime * RChange;
+		PoTurnx = -ChTurnx + Turnx;
+		PoTurny = ChTurny + Turny;
+		//Debug.Log("予測結果:"+PoTurnx+","+PoTurny+","+0);
+		//予測内容の垂直方向の角度が許容範囲内もしくはこれまでと反対方向のものなら角度を変更
+		xOK = false;
+		//if (-LRlimit < PoTurny && PoTurny < LRlimit && -UDlimit < PoTurnx && PoTurnx < UDlimit )
+		if (PoTurnx >= 0) //PoTurnx >= 0 下向き
 		{
-			NoKey = false;
-			if (Turny < LRlimit)
+			if (PoTurnx <= UDlimit) 
 			{
-				Vector3 axis = Vector3.up; //new Vector3(0.0f, 1.0f, 0.0f);
-				ChTurnx = 2.0f;
-				this.transform.RotateAround(bodyplace, axis, ChTurnx);
+				xOK = true;
 			}
 		}
-		//左旋回
-		if (Input.GetKey(KeyCode.LeftArrow))
+		else //PoTurnx < 0 上向き
 		{
-			NoKey = false;
-			if (Turny > -LRlimit)
+			if (-UDlimit <= PoTurnx)
 			{
-				Vector3 axis = Vector3.up; //new Vector3(0.0f, 1.0f, 0.0f);
-				ChTurnx = -2.0f;
-				this.transform.RotateAround(bodyplace, axis, ChTurnx);
+				xOK = true;				
 			}
 		}
-		//上旋回
-		if (Input.GetKey(KeyCode.UpArrow))
+		if (xOK)
 		{
-			NoKey = false;
-			if (Turnx > -UDlimit)
-			{
-				Vector3 axis = Vector3.right; //new Vector3(1.0f, 0.0f, 0.0f);
-				ChTurny = -2.0f;
-				this.transform.RotateAround(bodyplace, axis, ChTurny);
-			}
+			Turn.eulerAngles = new Vector3(-ChTurnx, ChTurny, 0);
+			this.transform.rotation *= Turn;
 		}
-		//下旋回
-		if (Input.GetKey(KeyCode.DownArrow))
+			//常時z軸角度だけは元に戻ろうとする
+		if (Turnz != 0.0f)
 		{
-			NoKey = false;
-			if (Turnx < UDlimit)
-			{
-				Vector3 axis = Vector3.right; //new Vector3(1.0f, 0.0f, 0.0f);
-				ChTurny = 2.0f;
-				this.transform.RotateAround(bodyplace, axis, ChTurny);
-			}
-		}
-		//キーが押されなければ元に戻ろうとする
-		if (NoKey)
-		{
-/*			if (Turnx != 0.0f)
-			{
-				Vector3 axis = Vector3.right; //new Vector3(1.0f, 0.0f, 0.0f);
-				ChTurny = Mathf.Sign(Turnx) * Mathf.Abs(Turnx) * 0.05f;
-				this.transform.RotateAround(bodyplace, axis, ChTurny);
-			}
-*/
-			if (Turnz != 0.0f)
-			{
-				/*
-				Turnx = transform.eulerAngles.x;
-				Turny = transform.eulerAngles.y;
-				Turnz = transform.eulerAngles.z;
-				ChTurnz = Turnz + Mathf.Sign(Turnz) * 0.1f;
-				Vector3 NowT = new Vector3(Turnx, Turny, Turnz);
-				Vector3 PostT = new Vector3(Turnx, Turny, ChTurnz);
-				Quaternion.Euler QTurnz = Quaternion.Euler(NowT);
-				Quaternion.Euler QChTurnz = Quaternion.Euler(PostT);
-				if (UseTime < 1)
-				{
-					UseTime += Time.deltaTime;
-					this.transform.rotation = Quaternion.Slerp(QTurnz, QChTurnz, UseTime);
-				}
-				*/
-				Turnx = transform.eulerAngles.x;
-				Turny = transform.eulerAngles.y;
-				transform.rotation = Quaternion.Euler(Turnx, Turny, 0);
-			}
-			else
-			{
-				UseTime = 0.0f;
-			}
+			Turnx = transform.eulerAngles.x;
+			Turny = transform.eulerAngles.y;
+			//Turnz = transform.eulerAngles.z;
+			this.transform.rotation = Quaternion.Euler(Turnx, Turny, 0);
 		}
 
 		//加速
 		if (Input.GetKey(KeyCode.W))
 		{
-			SpeedPlus += 1;
+			SpeedPlus += SChange;
 			SpeedMinus = 0;
 			GoSpeed += SpeedPlus;
-			if (GoSpeed > SpeedLimit)
+			if (GoSpeed > SpeedUpperLimit)
 			{
-				GoSpeed = SpeedLimit;
+				GoSpeed = SpeedUpperLimit;
 			}
 		}
 
 		//減速
 		if (Input.GetKey(KeyCode.S))
 		{
-			SpeedMinus += 1;
+			SpeedMinus += SChange;
 			SpeedPlus = 0;
 			GoSpeed -= SpeedMinus;
-			if (GoSpeed < 0.0f)
+			if (GoSpeed < SpeedLowerLimit)
 			{
-				GoSpeed = 0.0f;
+				GoSpeed = SpeedLowerLimit;
 			}
 		}		
+	}
 	}
 }
