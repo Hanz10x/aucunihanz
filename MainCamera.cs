@@ -10,7 +10,7 @@ public class MainCamera : MonoBehaviour
 	private Vector3 CameraPosition = Vector3.zero; //カメラの移動後の座標を格納する変数
 	private Vector3 CameraRotation = Vector3.zero; //カメラの角度を格納する変数
 	private Vector3 BodyPosition = Vector3.zero; //機体の現在の位置を格納する変数
-    private Vector3 DistanceToBody = Vector3.zero; //機体との相対座標を格納する変数
+	private Vector3 DistanceToBody = Vector3.zero; //機体との相対座標を格納する変数
 	private Vector3 RotationA = Vector3.zero; //機体の前回の角度を格納する変数
 	private Vector3 RotationB = Vector3.zero; //機体の現在の角度を格納する変数
 	private Vector3 RotationC = Vector3.zero; //機体の角度の変化量を格納する変数
